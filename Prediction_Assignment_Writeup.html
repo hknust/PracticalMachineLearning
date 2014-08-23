@@ -100,13 +100,13 @@ registerDoMC(cores = 8)
 model &lt;- train(classe~.,data=train.part, method=&quot;rf&quot;)</code></pre>
 <p>The training error rate was</p>
 <pre><code>##   Accuracy  Kappa mtry
-## 1   0.9971 0.9963    2
+## 1   0.9972 0.9965    2
 ## 2   0.9985 0.9981   27
-## 3   0.9963 0.9953   53</code></pre>
+## 3   0.9966 0.9957   53</code></pre>
 </div>
 <div id="out-of-sample-error" class="section level2">
 <h2>Out of Sample Error</h2>
-<p>The out of bag error can be found in the <code>finalModel</code> variable of the fitted model.</p>
+<p>The out of bag error can be found in the <code>finalModel</code> variable of the fitted model. Based on the results of 99% accuracy, the oob is expected to be less than 1%.</p>
 <pre><code>model$finalModel
 
 Call:
