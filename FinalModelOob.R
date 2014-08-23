@@ -37,7 +37,7 @@ train.clean <- train.clean[,colSums(is.na(train.clean)) < 19000]
 # Set number of available CPU cores to 8
 registerDoMC(cores = 8)
 
-# Train the model. Takes 15-20 mins on an i7
+# Train the model. Takes ca. 5 mins on an i7
 model <- train(classe~.,data=train.clean, method="rf", trControl = trainControl(method = "oob"))
 
 # Save the model for later use

@@ -69,13 +69,7 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 </div>
 <div id="data-preparation" class="section level2">
 <h2>Data Preparation</h2>
-<p>The measurements were provided as CSV files. Columns that did not have predictive qualities, measurement id, username, timestamps, and variables with low variation were removed (see code below). Some columns had only data in around 400 of the 19622 rows. Those columns were also eliminated.</p>
-<p>According to Random Forests coauthor Leo Breiman:</p>
-<blockquote>
-<p>In random forests, there is no need for cross-validation or a separate test set to get an unbiased estimate of the test set error.</p>
-</blockquote>
-<p><em>Source</em>: <a href="http://www.stat.berkeley.edu/~breiman/RandomForests/cc_home.htm#ooberr">Random Forests</a></p>
-<p>The whole training set was used to fit the model.</p>
+<p>The measurements were provided as CSV files. Columns that did not have predictive qualities, i.e. measurement id, username, timestamps, and variables with low variation were removed (see code below). Some columns had only data in around 400 of the 19622 rows. Those columns were also eliminated.</p>
 <pre><code># Read csv
 train.all &lt;- read.csv('pml-training.csv')
 test.all &lt;- read.csv('pml-testing.csv')
@@ -92,12 +86,19 @@ train.clean &lt;- train.clean[,colSums(is.na(train.clean)) &lt; 19000]</code></p
 </div>
 <div id="model-fitting" class="section level2">
 <h2>Model Fitting</h2>
-<p>A classification tree was built using the Random Forests method. Since RF is computationally expensive the doMC package was used to take advantage of the multi-core CPU used for processing (ee code below). The fitted model was saved for analysis.</p>
+<p>A classification tree was built using the Random Forests method.</p>
+<p>According to Random Forests coauthor Leo Breiman:</p>
+<blockquote>
+<p>In random forests, there is no need for cross-validation or a separate test set to get an unbiased estimate of the test set error.</p>
+</blockquote>
+<p><em>Source</em>: <a href="http://www.stat.berkeley.edu/~breiman/RandomForests/cc_home.htm#ooberr">Random Forests</a></p>
+<p>Accordingly, the complete training set was used to fit the model.</p>
+<p>Since RF is computationally expensive the doMC package was used to take advantage of the multi-core CPU used for processing (see code below). The fitted model was saved for analysis.</p>
 <pre><code># Set number of available CPU cores to 8
 registerDoMC(cores = 8)
 
-# Train the model. Takes 15-20 mins on an i7
-model &lt;- train(classe~.,data=train.part, method=&quot;rf&quot;)</code></pre>
+# Train the model. Takes ca. 5 mins on an i7
+model &lt;- train(classe~.,data=train.clean, method=&quot;rf&quot;, trControl = trainControl(method = &quot;oob&quot;))</code></pre>
 <p>The training error rate was</p>
 <pre><code>##   Accuracy  Kappa mtry
 ## 1   0.9972 0.9965    2
