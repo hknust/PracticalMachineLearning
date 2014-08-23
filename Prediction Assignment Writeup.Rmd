@@ -1,0 +1,103 @@
+---
+title: "Prediction Assignment Writeup"
+output:
+  html_document:
+    keep_md: true
+    pandoc_args: [
+      +RTS, -K128m, -RTS
+    ]    
+---
+
+## Overview
+The data for this exercise was collected by having six participants perform one set of 10 repetitions of the Unilateral Dumbbell Biceps Curl in five different fashions: 
+
+* exactly according to the specification (Class A)
+* throwing the elbows to the front (Class B)
+* lifting the dumbbell only halfway (Class C)
+* lowering the dumbbell only halfway (Class D)
+* throwing the hips to the front (Class E).
+
+The assignment is to construct a model out of the data that allows for the prediction of the exercise class.
+
+## Data Preparation
+The measurements were provided as CSV files. Columns that did not have predictive qualities, measurement id, username, timestamps, and variables with low variation were removed (see code below). Some columns had only data in around 400 of the 19622 rows. Those columns were also eliminated. 
+
+According to Random Forests coauthor Leo Breiman:
+
+> In random forests, there is no need for cross-validation or a separate test set to get an unbiased estimate of the test set error. 
+
+*Source*: [Random Forests](http://www.stat.berkeley.edu/~breiman/RandomForests/cc_home.htm#ooberr)
+
+The whole training set was used to fit the model.
+
+```
+# Read csv
+train.all <- read.csv('pml-training.csv')
+test.all <- read.csv('pml-testing.csv')
+
+rem.col.ids <- grep("X|user_name|cvtd_timestamp|raw_timestamp_part_1|raw_timestamp_part_2", names(train.all))
+train.clean <- train.all[, -rem.col.ids]
+
+nzv <- nearZeroVar(train.clean[,-155])
+train.clean <- train.clean[, -nzv]
+
+# Some columns have mostly NAs and a little more than 400 rows with values
+# Remove those columns where the number is less than the threshold of 623 data rows
+train.clean <- train.clean[,colSums(is.na(train.clean)) < 19000]
+```
+
+## Model Fitting
+A classification tree was built using the Random Forests method. Since RF is computationally expensive the doMC package was used to take advantage of the multi-core CPU used for processing (ee code below). The fitted model was saved for analysis.
+
+```
+# Set number of available CPU cores to 8
+registerDoMC(cores = 8)
+
+# Train the model. Takes 15-20 mins on an i7
+model <- train(classe~.,data=train.part, method="rf")
+```
+
+The training error rate was
+
+```{r, echo=FALSE}
+setwd("~/git/Coursera/DataScience/08_PracticalML/Project/")
+
+load(file = "model.RData")
+load(file = "results.RData")
+load(file = "testClean.RData")
+load(file = "answers.RData")
+
+model$results
+```
+
+##Out of Sample Error 
+The out of bag error can be found in the `finalModel` variable of the fitted model.
+
+```
+model$finalModel
+
+Call:
+ randomForest(x = x, y = y, mtry = param$mtry) 
+               Type of random forest: classification
+                     Number of trees: 500
+No. of variables tried at each split: 27
+
+        OOB estimate of  error rate: 0.14%
+Confusion matrix:
+     A    B    C    D    E  class.error
+A 5578    1    0    0    1 0.0003584229
+B    7 3787    2    1    0 0.0026336582
+C    0    5 3417    0    0 0.0014611338
+D    0    0    6 3209    1 0.0021766169
+E    0    0    0    3 3604 0.0008317161
+```
+
+##Test Data Prediction
+The model was the used to predict the classes of the 20 test cases provided.
+
+```
+answers <- predict(model, newdata=test.clean)
+```
+```{r, echo=FALSE}
+answers
+```
